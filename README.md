@@ -32,6 +32,6 @@ session = ""
 
 [storage]
 cache = "leetcode.sqlite3"
-project = "~/config/leetcode/code"
+project = "~/.config/leetcode/code"
 root = "~/.config/leetcode"
 ```
