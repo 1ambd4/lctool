@@ -7,6 +7,10 @@ use std::{
 };
 
 use anyhow::Result;
+use reqwest::header::{HeaderMap, HeaderValue};
+use serde_json::json;
+
+use crate::config;
 
 pub async fn format_json(src: PathBuf, dst: PathBuf) -> Result<()> {
     let cat_command = Command::new("cat")
@@ -97,4 +101,81 @@ pub fn default_config() -> Result<()> {
         .unwrap();
 
     Ok(())
+}
+
+pub async fn query_all(path: PathBuf) -> Result<i32> {
+    let mut index = 0;
+
+    loop {
+        let limit = 100;
+        let mut skip = index * limit;
+
+        let query_body = json!({
+            "query": "\n query problemsetQuestionList($limit: Int, $skip: Int) {\n problemsetQuestionList(\n limit: $limit\n skip: $skip\n) {\n hasMore\n total\n questions {\n acRate\n difficulty\n title\n titleCn\n titleSlug\n}\n}\n}\n",
+            "variables": {
+                "skip": skip,
+                "limit": limit,
+            },
+            "operationName": "problemsetQuestionList"
+        });
+
+        // let default_headers = LeetCode::headers(
+        //     HeaderMap::new(),
+        //     vec![
+        //         ("Cookie", &cookie),
+        //         ("x-csrftoken", &csrf),
+        //         ("x-requested-with", "XMLHttpRequest"),
+        //         ("Origin", &conf.sys.urls.base),
+        //     ],
+        // )?;
+        //
+
+        let mut headers = HeaderMap::new();
+        headers.insert(
+            "x-csrftoken",
+            HeaderValue::from_str(&config::Config::global().cookies.csrf().unwrap())?,
+        );
+        headers.insert("content-type", HeaderValue::from_static("application/json"));
+        headers.insert("Origin", HeaderValue::from_static("https://leetcode.cn"));
+
+        let client = reqwest::Client::builder()
+            .user_agent(
+                "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) \
+                 Chrome/120.0.0.0 Safari/537.36",
+            )
+            .default_headers(headers)
+            .cookie_store(true)
+            .build()?;
+
+        let resp = client
+            .post("https://leetcode.cn/graphql/")
+            .json(&query_body)
+            .send()
+            .await?
+            .text()
+            .await?;
+
+        let filename = format!("lc-{}.json", index);
+        let filepath = path.join(filename);
+
+        println!("write: {:#?}", filepath);
+
+        let mut file = File::options()
+            .create(true)
+            .truncate(true)
+            .write(true)
+            .open(filepath)
+            .unwrap();
+        file.write_all(&resp.as_bytes()).unwrap();
+
+        let resp_json: serde_json::Value = serde_json::from_str(resp.as_str()).unwrap();
+        let has_more = &resp_json["data"]["problemsetQuestionList"]["hasMore"];
+        if has_more.as_bool().unwrap() {
+            index += 1;
+        } else {
+            break;
+        }
+    }
+
+    Ok(index)
 }
