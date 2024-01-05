@@ -1,10 +1,11 @@
 use anyhow::Result;
 use async_trait::async_trait;
 use clap::{Arg, ArgMatches, Command as ClapCommand};
-use std::path::PathBuf;
+use log::debug;
+use std::{fs::File, io::Write, path::PathBuf};
 
 use super::Command;
-use crate::{config, db};
+use crate::{config, db, leetcode};
 
 pub struct EditCommand;
 
@@ -27,11 +28,34 @@ impl Command for EditCommand {
         if let Ok(problem) = db.query_with_id(id) {
             let filename = format!("{:04}.{}.cpp", problem.id, problem.slug).replace("-", "_");
             let testfile = format!("{:04}.in", problem.id);
+
             let path = PathBuf::from(config::Config::global().storage.project().unwrap());
 
+            if !path.join(&testfile).exists() {
+                let testcase = leetcode::Request::default()
+                    .query_testcase_with_id(id)
+                    .await?
+                    .replace("\"", "")
+                    .replace("\\n", "\n")
+                    .replace(",", " ")
+                    .replace("[", "")
+                    .replace("]", "");
+
+                let mut file = File::options()
+                    .create(true)
+                    .append(true)
+                    .open(path.join(&testfile))
+                    .unwrap();
+                file.write_all(testcase.as_bytes()).unwrap();
+                file.flush().unwrap();
+
+                debug!("{:#?} not exists, would create it.", file);
+                debug!("testcase: {:#?}", testcase);
+            }
+
             let _ = std::process::Command::new("nvim")
-                .arg(path.join(filename))
-                .arg(path.join(testfile))
+                .arg(path.join(&filename))
+                .arg(path.join(&testfile))
                 .status()
                 .expect("exec nvim failed");
         }

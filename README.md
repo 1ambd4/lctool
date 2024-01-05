@@ -2,10 +2,18 @@
 
 > **A Simple Cli Tool for Leetcode**
 
+## Install
+
+``` bash
+git clone https://github.com/1ambd4/leetcode-cli.git
+cd leetcode-cli
+cargo install --path .
+```
+
 ## Usage
 
 ```
-A simple tool for leetcode.
+A Simple Cli Tool for Leetcode
 
 Usage: leetcode-cli [COMMAND]
 

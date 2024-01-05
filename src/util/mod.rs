@@ -10,7 +10,7 @@ use anyhow::Result;
 use reqwest::header::{HeaderMap, HeaderValue};
 use serde_json::json;
 
-use crate::config;
+use crate::{config, leetcode::Url};
 
 pub async fn format_json(src: PathBuf, dst: PathBuf) -> Result<()> {
     let cat_command = Command::new("cat")
@@ -65,44 +65,6 @@ pub async fn delete_previous_index() -> Result<()> {
     Ok(())
 }
 
-pub fn default_config() -> Result<()> {
-    println!("Please input your project path:");
-    let mut buf = String::new();
-    io::stdin()
-        .read_line(&mut buf)
-        .expect("Failed to read input");
-    buf = buf.trim().to_string();
-
-    let mut project_path;
-
-    if buf.is_empty() {
-        project_path = home_dir().unwrap().join("github").join("leetcode");
-    } else {
-        project_path = PathBuf::from(buf.to_string());
-    }
-
-    let config_path = home_dir().unwrap().join(".config").join("lctool");
-
-    if !try_exists(&config_path).unwrap() {
-        create_dir_all(&config_path).unwrap();
-    }
-
-    let config_file = File::options()
-        .create(true)
-        .truncate(true)
-        .write(true)
-        .open(config_path.join("lc.toml"))
-        .unwrap();
-
-    let mut writer = BufWriter::new(config_file);
-    writer.write_all("[project]\n".as_bytes()).unwrap();
-    writer
-        .write_all(format!("path = \"{}\"\n", project_path.to_str().unwrap()).as_bytes())
-        .unwrap();
-
-    Ok(())
-}
-
 pub async fn query_all(path: PathBuf) -> Result<i32> {
     let mut index = 0;
 
@@ -111,24 +73,27 @@ pub async fn query_all(path: PathBuf) -> Result<i32> {
         let mut skip = index * limit;
 
         let query_body = json!({
-            "query": "\n query problemsetQuestionList($limit: Int, $skip: Int) {\n problemsetQuestionList(\n limit: $limit\n skip: $skip\n) {\n hasMore\n total\n questions {\n acRate\n difficulty\n title\n titleCn\n titleSlug\n}\n}\n}\n",
+            "query": vec![
+                "query problemsetQuestionList($limit: Int, $skip: Int) {",
+                "   problemsetQuestionList(limit: $limit skip: $skip) {",
+                "       hasMore",
+                "       total",
+                "       questions {",
+                "           acRate",
+                "           difficulty",
+                "           title",
+                "           titleCn",
+                "           titleSlug",
+                "       }",
+                "   }",
+                "}",
+            ].join("\n"),
             "variables": {
                 "skip": skip,
                 "limit": limit,
             },
             "operationName": "problemsetQuestionList"
         });
-
-        // let default_headers = LeetCode::headers(
-        //     HeaderMap::new(),
-        //     vec![
-        //         ("Cookie", &cookie),
-        //         ("x-csrftoken", &csrf),
-        //         ("x-requested-with", "XMLHttpRequest"),
-        //         ("Origin", &conf.sys.urls.base),
-        //     ],
-        // )?;
-        //
 
         let mut headers = HeaderMap::new();
         headers.insert(
@@ -148,7 +113,8 @@ pub async fn query_all(path: PathBuf) -> Result<i32> {
             .build()?;
 
         let resp = client
-            .post("https://leetcode.cn/graphql/")
+            // .post("https://leetcode.cn/graphql/")
+            .post(Url::global().graphql())
             .json(&query_body)
             .send()
             .await?
@@ -178,4 +144,31 @@ pub async fn query_all(path: PathBuf) -> Result<i32> {
     }
 
     Ok(index)
+}
+
+mod test {
+    use serde_json::json;
+
+    #[test]
+    fn concat_vec_to_json() {
+        let query_body = json!({
+            "query": vec![
+                "query problemsetQuestionList($limit: Int, $skip: Int) {",
+                "   problemsetQuestionList(limit: $limit skip: $skip) {",
+                "       hasMore",
+                "       total",
+                "       questions {",
+                "           acRate",
+                "           difficulty",
+                "           title",
+                "           titleCn",
+                "           titleSlug",
+                "       }",
+                "   }",
+                "}",
+            ].join("\n"),
+        });
+
+        println!("{:#?}", query_body);
+    }
 }
