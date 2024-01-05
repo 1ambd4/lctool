@@ -1,5 +1,3 @@
-#![feature(fs_try_exists)]
-
 pub mod cache;
 pub mod cli;
 pub mod cmd;

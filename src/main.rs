@@ -1,5 +1,3 @@
-#![feature(fs_try_exists)]
-
 use leetcode_cli::cli::cli_main;
 use tokio::runtime::Builder;
 

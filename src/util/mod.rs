@@ -1,6 +1,6 @@
 use std::{
     env::home_dir,
-    fs::{create_dir_all, remove_dir_all, remove_file, try_exists, File},
+    fs::{create_dir_all, remove_dir_all, remove_file, File},
     io::{self, BufWriter, Write},
     path::PathBuf,
     process::{Command, Stdio},
@@ -37,29 +37,6 @@ pub async fn format_json(src: PathBuf, dst: PathBuf) -> Result<()> {
     let status = tee_command.wait().unwrap();
     if !status.success() {
         eprintln!("format json failed!!!");
-    }
-
-    Ok(())
-}
-
-pub async fn delete_previous_index() -> Result<()> {
-    let mut path = home_dir()
-        .unwrap()
-        .join(".config")
-        .join("lctool")
-        .join("data");
-
-    if std::fs::try_exists(path.join("raw")).unwrap() {
-        remove_dir_all(path.join("raw")).unwrap();
-    }
-
-    if std::fs::try_exists(path.join("fmt")).unwrap() {
-        remove_dir_all(path.join("fmt")).unwrap();
-    }
-
-    path.pop();
-    if std::fs::try_exists(path.join("lc.sqlite")).unwrap() {
-        remove_file(path.join("lc.sqlite")).unwrap();
     }
 
     Ok(())
