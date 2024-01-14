@@ -1,8 +1,13 @@
 use anyhow::Result;
 use async_trait::async_trait;
 use clap::{Arg, ArgMatches, Command as ClapCommand};
-use log::debug;
-use std::{fs::File, io::Write, path::PathBuf};
+use log::{debug, info};
+use std::{
+    fs::File,
+    io::Write,
+    path::PathBuf,
+    time::{Duration, Instant},
+};
 
 use super::Command;
 use crate::{config, db, leetcode};
@@ -53,11 +58,18 @@ impl Command for EditCommand {
                 debug!("testcase: {:#?}", testcase);
             }
 
+            let now = Instant::now();
+
             let _ = std::process::Command::new("nvim")
                 .arg(path.join(&filename))
                 .arg(path.join(&testfile))
                 .status()
                 .expect("exec nvim failed");
+
+            let elapsed_time = now.elapsed();
+            let minute = elapsed_time.as_secs() / 60;
+            let second = elapsed_time - Duration::from_secs(minute * 60);
+            info!("use time: {}:{}", minute, second.as_secs());
         }
 
         Ok(())
