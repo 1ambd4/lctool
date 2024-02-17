@@ -10,28 +10,50 @@ use std::{
 };
 
 use super::Command;
-use crate::{config, db, leetcode};
+use crate::{
+    config, db,
+    leetcode::{self, Language},
+};
 
 pub struct EditCommand;
 
 #[async_trait]
 impl Command for EditCommand {
     fn usage() -> ClapCommand {
-        ClapCommand::new("edit").about("edit problem by id").arg(
-            Arg::new("id")
-                .num_args(1)
-                .required(true)
-                .value_parser(clap::value_parser!(i32))
-                .help("problem id"),
-        )
+        ClapCommand::new("edit")
+            .about("edit problem by id")
+            .arg(
+                Arg::new("id")
+                    .num_args(1)
+                    .required(true)
+                    .value_parser(clap::value_parser!(i32))
+                    .help("problem id"),
+            )
+            .arg(
+                Arg::new("language")
+                    .num_args(1)
+                    .required(true)
+                    .value_parser(clap::value_parser!(String))
+                    .help("language"),
+            )
     }
 
     async fn handler(m: &ArgMatches) -> Result<()> {
         let id = *m.get_one::<i32>("id").unwrap();
+        let lp = m
+            .get_one::<String>("language")
+            .unwrap_or(&String::from("cpp"))
+            .to_string()
+            .parse::<Language>()
+            .unwrap();
+
+        debug!("use language: {:#?}", lp);
+
         let db = db::Sqlite3::global();
 
         if let Ok(problem) = db.query_with_id(id) {
-            let filename = format!("{:04}.{}.cpp", problem.id, problem.slug).replace("-", "_");
+            let filename =
+                format!("{:04}.{}.{}", problem.id, problem.slug, lp.to_string()).replace("-", "_");
             let testfile = format!("{:04}.in", problem.id);
 
             let path = PathBuf::from(config::Config::global().storage.project().unwrap());
