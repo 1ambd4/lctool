@@ -2,9 +2,11 @@
 
 > **A Simple Cli Tool for Leetcode**
 
+![GitHub last commit](https://img.shields.io/github/last-commit/1ambd4/leetcode-cli) ![GitHub Actions Workflow Status](https://img.shields.io/github/actions/workflow/status/1ambd4/leetcode-cli/rust.yml) ![GitHub License](https://img.shields.io/github/license/1ambd4/leetcode-cli)
+
 ## Install
 
-``` bash
+```bash
 git clone https://github.com/1ambd4/leetcode-cli.git
 cd leetcode-cli
 cargo install --path .
@@ -33,7 +35,7 @@ Options:
 
 The default config file is :`~/.config/leetcode/leetcode.toml`.
 
-``` toml
+```toml
 [cookies]
 csrf = ""
 session = ""
