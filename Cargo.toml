@@ -1,18 +1,22 @@
 [package]
-name = "lctool"
-version = "0.1.0"
+name = "leetcode-cli"
+version = "0.2.0"
 edition = "2021"
 authors = ["1ambd4 <dr.chen@mail.ustc.edu.cn>"]
-description = """A simple tool for leetcode."""
+description = """A Simple Cli Tool for Leetcode"""
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/1ambd4/lctool"
+repository = "https://github.com/1ambd4/leetcode-cli"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 anyhow = "1.0.77"
-clap = { version = "4.4.11", features = ["derive"] }
+async-trait = "0.1.77"
+clap = { version = "4.4.11", features = ["derive", "cargo"] }
 config = "0.13.4"
+dir = "0.1.2"
+env_logger = "0.10.1"
+log = "0.4.20"
 reqwest = { version = "0.11.23", features = ["json", "cookies"] }
 rusqlite = { version = "0.30.0", features = ["bundled"] }
 serde = { version = "1.0.193", features = ["derive"] }
