@@ -32,7 +32,7 @@ impl Command for EditCommand {
             .arg(
                 Arg::new("language")
                     .num_args(1)
-                    .required(true)
+                    .required(false)
                     .value_parser(clap::value_parser!(String))
                     .help("language"),
             )
